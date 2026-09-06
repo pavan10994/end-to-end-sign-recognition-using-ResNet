@@ -1,0 +1,34 @@
+artifacts_config:
+  artifact_dir: "artifacts"
+
+data_ingestion_config:
+  data_ingestion_dir: "data_ingestion"
+  feature_store_file_path: "artifacts/feature_store"
+  ingested_dir: "artifacts/ingested"
+  data_bucket_name: "signature-recognition-data-bucket"
+  zip_file_name: "cedar_dataset.zip"
+
+data_transformation_config:
+  data_transformation_dir: "data_transformation"
+  transformed_train_dir: "artifacts/ingested/cedar"
+  transformed_val_dir: "artifacts/transformed/val"
+  transformed_test_dir: "artifacts/transformed/test"
+  transform_object_file_path: "artifacts/data_transformation/transform.pkl"
+
+model_trainer_config:
+  model_trainer_dir: "model_trainer"
+  trained_model_file_path: "artifacts/model_trainer/model.pt"
+  learning_rate: 0.001
+  momentum: 0.9
+  epochs: 20
+  batch_size: 32
+
+model_evaluation_config:
+  model_evaluation_dir: "artifacts/model_evaluation"
+  gcs_model_bucket: "signature-recognition-model-bucket"
+  model_file_name: "model.pt"
+
+model_pusher_config:
+  model_pusher_dir: "artifacts/model_pusher"
+  gcs_model_bucket: "signature-recognition-model-bucket"
+  model_file_name: "model.pt"

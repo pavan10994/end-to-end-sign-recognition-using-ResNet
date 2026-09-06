@@ -1,0 +1,85 @@
+name: Production Signature Recognition CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  continuous-integration:
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+          pip install -r requirements.txt
+
+      - name: Code Linting
+        run: |
+          # Stop build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings.
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  build-and-push-gcr:
+    name: Continuous Delivery (Build & Push to GCR)
+    needs: continuous-integration
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker for GCP
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Build and Tag Docker Image
+        run: |
+          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/signature-repo/signature-app:latest .
+
+      - name: Push Image to Google Artifact Registry
+        run: |
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/signature-repo/signature-app:latest
+
+  deploy-to-runner:
+    name: Continuous Deployment
+    needs: build-and-push-gcr
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Pull Latest Docker Image
+        run: |
+          docker pull us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/signature-repo/signature-app:latest
+
+      - name: Stop and Remove Existing Container
+        run: |
+          docker stop signature-app-container || true
+          docker rm signature-app-container || true
+
+      - name: Run Deploy Container
+        run: |
+          docker run -d -p 8080:8080 --name signature-app-container \
+            -e GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }} \
+            us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/signature-repo/signature-app:latest
