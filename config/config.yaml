@@ -5,7 +5,7 @@ data_ingestion_config:
   data_ingestion_dir: "data_ingestion"
   feature_store_file_path: "artifacts/feature_store"
   ingested_dir: "artifacts/ingested"
-  data_bucket_name: "signature-recognition-data-bucket"
+  data_bucket_name: "local"
   zip_file_name: "cedar_dataset.zip"
 
 data_transformation_config:
@@ -25,10 +25,10 @@ model_trainer_config:
 
 model_evaluation_config:
   model_evaluation_dir: "artifacts/model_evaluation"
-  gcs_model_bucket: "signature-recognition-model-bucket"
+  gcs_model_bucket: "local"
   model_file_name: "model.pt"
 
 model_pusher_config:
   model_pusher_dir: "artifacts/model_pusher"
-  gcs_model_bucket: "signature-recognition-model-bucket"
+  gcs_model_bucket: "local"
   model_file_name: "model.pt"
